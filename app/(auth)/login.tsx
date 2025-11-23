@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { loginWithEmail } from '@/services/auth';
+import { useGoogleAuth } from '@/services/google-auth';
+import { signInWithApple } from '@/services/apple-auth';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 
@@ -12,6 +14,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const router = useRouter();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
+  const { signInWithGoogle, request: googleRequest } = useGoogleAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -52,7 +55,26 @@ export default function LoginScreen() {
       {isLoading ? (
         <ActivityIndicator size="large" color="#0a7ea4" />
       ) : (
-        <Button title="Login" onPress={handleLogin} />
+        <>
+          <Button title="Login" onPress={handleLogin} />
+          
+          <View style={styles.divider}>
+             <ThemedText>OR</ThemedText>
+          </View>
+
+          <Button 
+            title="Sign in with Google" 
+            onPress={() => signInWithGoogle()} 
+            disabled={!googleRequest}
+          />
+          
+          <View style={{ height: 10 }} />
+
+          <Button 
+             title="Sign in with Apple" 
+             onPress={() => signInWithApple()} 
+          />
+        </>
       )}
 
       <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.linkButton}>
@@ -62,11 +84,17 @@ export default function LoginScreen() {
   );
 }
 
+import { View } from 'react-native';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     justifyContent: 'center',
+  },
+  divider: {
+    alignItems: 'center',
+    marginVertical: 20,
   },
   title: {
     textAlign: 'center',

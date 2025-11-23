@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { StyleSheet, Button, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Notifications from 'expo-notifications';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useDispatch } from 'react-redux';
-import { completeOnboarding } from '@/store/authSlice';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
+import { registerForPushNotificationsAsync } from '@/services/notifications';
+import { savePushToken } from '@/services/user';
 
 export default function OnboardingPermissions() {
   const router = useRouter();
-  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(false);
 
   const handleEnableNotifications = async () => {
@@ -17,28 +18,19 @@ export default function OnboardingPermissions() {
     try {
       if (Platform.OS === 'web') {
         alert('Push notifications are not fully supported on web for this demo.');
-        finishOnboarding();
+        nextStep();
         return;
       }
 
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
+      const token = await registerForPushNotificationsAsync();
+      if (token && user?.uid) {
+        await savePushToken(user.uid, token);
+      } else {
+         // Proceed even if failed, but maybe warn?
+         // Alert.alert('Notice', 'Could not get push token.');
       }
 
-      if (finalStatus !== 'granted') {
-        Alert.alert('Permission needed', 'Enable notifications to stay on track with your wins!');
-        // We let them proceed anyway, or we could block. For now, let's proceed.
-      }
-      
-      // Here we would get the token and save it to Firestore
-      // const token = (await Notifications.getExpoPushTokenAsync()).data;
-      // await savePushToken(token);
-
-      finishOnboarding();
+      nextStep();
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to enable notifications');
@@ -47,14 +39,11 @@ export default function OnboardingPermissions() {
   };
 
   const handleSkip = () => {
-    finishOnboarding();
+    nextStep();
   };
 
-  const finishOnboarding = () => {
-    dispatch(completeOnboarding());
-    // Root layout will see the state change and redirect to tabs
-    // But we can also explicitly replace
-    router.replace('/(tabs)');
+  const nextStep = () => {
+    router.push('/(onboarding)/demo');
   };
 
   return (
