@@ -11,16 +11,11 @@ import {
 } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// TODO: Import slices here
-// import authReducer from './authSlice';
+import authReducer from './authSlice';
 
 const rootReducer = combineReducers({
-  // auth: authReducer,
+  auth: authReducer,
   // wins: winsReducer,
-  // Temporary placeholder to avoid empty reducer warning/error
-  _persist: (state = { rehydrated: false }, action: any) => {
-      return state; 
-  }
 });
 
 const persistConfig = {
